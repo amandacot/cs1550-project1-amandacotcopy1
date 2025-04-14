@@ -1,0 +1,4 @@
+*.o
+*.d
+tutor_sim
+tutorsim-sol.c
