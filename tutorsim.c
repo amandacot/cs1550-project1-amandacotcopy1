@@ -84,6 +84,7 @@ void handle_student(int student_id) {
     entered[student_id] = 1;
     student_enter(student_id);
     current_students++;
+    pthread_cond_broadcast(&cond);
 
     pthread_mutex_unlock(&lock);
     
