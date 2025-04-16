@@ -63,7 +63,7 @@ void handle_student(int student_id) {
         pthread_cond_wait(&cond, &lock);
     }
 
-    if (!activated_students[student_id]) {
+    if (!activated_students[student_id] && room_closed) {
         student_leave(student_id); 
         pthread_mutex_unlock(&lock);
         return;
