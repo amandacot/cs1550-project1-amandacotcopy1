@@ -205,7 +205,7 @@ void close_study_room(void) {
 
     // Delay to catch any straggling threads and wake again
     //usleep(1000);
-    pthread_mutex_lock(&lock);
-    pthread_cond_broadcast(&cond);
-    pthread_mutex_unlock(&lock);
+    //pthread_mutex_lock(&lock);
+    //pthread_cond_broadcast(&cond);
+    //pthread_mutex_unlock(&lock);
 }
