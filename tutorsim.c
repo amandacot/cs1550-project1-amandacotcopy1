@@ -64,8 +64,8 @@ void handle_student(int student_id) {
     }
 
     if (!activated_students[student_id]) {
+        student_leave(student_id); 
         pthread_mutex_unlock(&lock);
-        //student_leave(student_id); 
         return;
     }
 
