@@ -1,7 +1,9 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include "testlib.h"
+#include <unistd.h>
 
 #define MAX_STUDENTS_IN_ROOM 4
 #define MAX_TUTORS_IN_ROOM 2
@@ -153,48 +155,6 @@ void handle_tutor(int tutor_id) {
     //           - Call tutor_helps_student(tutor_id, student_id)
     //           - Notify student that they have been helped
  
-//  int helped_count = 0;
-
-// while (helped_count < 2) {
-//     // Wait until a student is helpable
-//     while (!room_closed) {
-//         int student_available = 0;
-//         for (int sid = 0; sid < MAX_STUDENTS; sid++) {
-//             if (activated_students[sid] && entered[sid] && !helped[sid]) {
-//                 student_available = 1;
-//                 break;
-//             }
-//         }
-//         if (student_available) break;
-
-//         pthread_cond_wait(&cond, &lock); // Wait for students to enter
-//     }
-
-//     // Help the first available student
-//     int found = 0;
-//     for (int sid = 0; sid < MAX_STUDENTS; sid++) {
-//         if (activated_students[sid] && entered[sid] && !helped[sid]) {
-//             helped[sid] = 1;
-//             tutor_helps_student(tutor_id, sid);
-//             pthread_cond_signal(&student_ready[sid]);
-//             helped_count++;
-//             found = 1;
-//             break;
-//         }
-//     }
-
-//     // Exit only if room is closed and there are no helpable students
-//     if (!found && room_closed) {
-//         int any_remaining = 0;
-//         for (int sid = 0; sid < MAX_STUDENTS; sid++) {
-//             if (activated_students[sid] && entered[sid] && !helped[sid]) {
-//                 any_remaining = 1;
-//                 break;
-//             }
-//         }
-//         if (!any_remaining) break;
-//     }
-// }
 int helped_count = 0;
    while (helped_count < 2) {
     // Early exit if room is closed and no helpable students
@@ -224,11 +184,37 @@ int helped_count = 0;
         }
     }
 
-    if (!found) {
-        fprintf(stderr, "INFO:(Tutor %d waiting for students...\n", tutor_id);
-        pthread_cond_wait(&cond, &lock);
+while (!found) {
+    // Re-check condition after waking up
+    fprintf(stderr, "INFO: Tutor %d waiting for students...\n", tutor_id);
+    pthread_cond_wait(&cond, &lock);
+
+    for (int sid = 0; sid < MAX_STUDENTS; sid++) {
+        if (activated_students[sid] && entered[sid] && !helped[sid]) {
+            helped[sid] = 1;
+            fprintf(stderr, "INFO: Tutor %d found Student %d to help\n", tutor_id, sid);
+            tutor_helps_student(tutor_id, sid);
+            pthread_cond_signal(&student_ready[sid]);
+            helped_count++;
+            found = 1;
+            break;
+        }
+    }
+
+    // If room is closed and no students left, break cleanly
+    int helpable_remaining = 0;
+    for (int sid = 0; sid < MAX_STUDENTS; sid++) {
+        if (activated_students[sid] && entered[sid] && !helped[sid]) {
+            helpable_remaining = 1;
+            break;
+        }
+    }
+    if (room_closed && !helpable_remaining) {
+        fprintf(stderr, "INFO: Tutor %d breaking early, no students left to help\n", tutor_id);
+        break;
     }
 }
+   }
     
     
     // TODO: Leave the room
