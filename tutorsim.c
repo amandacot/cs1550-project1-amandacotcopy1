@@ -150,49 +150,82 @@ void handle_tutor(int tutor_id) {
     //           - Call tutor_helps_student(tutor_id, student_id)
     //           - Notify student that they have been helped
  
- int helped_count = 0;
+//  int helped_count = 0;
 
-while (helped_count < 2) {
-    // Wait until a student is helpable
-    while (!room_closed) {
-        int student_available = 0;
+// while (helped_count < 2) {
+//     // Wait until a student is helpable
+//     while (!room_closed) {
+//         int student_available = 0;
+//         for (int sid = 0; sid < MAX_STUDENTS; sid++) {
+//             if (activated_students[sid] && entered[sid] && !helped[sid]) {
+//                 student_available = 1;
+//                 break;
+//             }
+//         }
+//         if (student_available) break;
+
+//         pthread_cond_wait(&cond, &lock); // Wait for students to enter
+//     }
+
+//     // Help the first available student
+//     int found = 0;
+//     for (int sid = 0; sid < MAX_STUDENTS; sid++) {
+//         if (activated_students[sid] && entered[sid] && !helped[sid]) {
+//             helped[sid] = 1;
+//             tutor_helps_student(tutor_id, sid);
+//             pthread_cond_signal(&student_ready[sid]);
+//             helped_count++;
+//             found = 1;
+//             break;
+//         }
+//     }
+
+//     // Exit only if room is closed and there are no helpable students
+//     if (!found && room_closed) {
+//         int any_remaining = 0;
+//         for (int sid = 0; sid < MAX_STUDENTS; sid++) {
+//             if (activated_students[sid] && entered[sid] && !helped[sid]) {
+//                 any_remaining = 1;
+//                 break;
+//             }
+//         }
+//         if (!any_remaining) break;
+//     }
+// }
+int helped_count = 0;
+
+    while (helped_count < 2) {
+        // Check if any helpable student exists
+        int found = 0;
         for (int sid = 0; sid < MAX_STUDENTS; sid++) {
             if (activated_students[sid] && entered[sid] && !helped[sid]) {
-                student_available = 1;
+                helped[sid] = 1;
+                tutor_helps_student(tutor_id, sid);
+                pthread_cond_signal(&student_ready[sid]);
+                helped_count++;
+                found = 1;
                 break;
             }
         }
-        if (student_available) break;
 
-        pthread_cond_wait(&cond, &lock); // Wait for students to enter
-    }
-
-    // Help the first available student
-    int found = 0;
-    for (int sid = 0; sid < MAX_STUDENTS; sid++) {
-        if (activated_students[sid] && entered[sid] && !helped[sid]) {
-            helped[sid] = 1;
-            tutor_helps_student(tutor_id, sid);
-            pthread_cond_signal(&student_ready[sid]);
-            helped_count++;
-            found = 1;
-            break;
-        }
-    }
-
-    // Exit only if room is closed and there are no helpable students
-    if (!found && room_closed) {
-        int any_remaining = 0;
-        for (int sid = 0; sid < MAX_STUDENTS; sid++) {
-            if (activated_students[sid] && entered[sid] && !helped[sid]) {
-                any_remaining = 1;
+        // If no student was helped this round...
+        if (!found) {
+            // If room is closed and no helpable students remain, break out
+            int any_left = 0;
+            for (int sid = 0; sid < MAX_STUDENTS; sid++) {
+                if (activated_students[sid] && entered[sid] && !helped[sid]) {
+                    any_left = 1;
+                    break;
+                }
+            }
+            if (!any_left && room_closed) {
                 break;
             }
-        }
-        if (!any_remaining) break;
-    }
-}
 
+            // Otherwise wait for a student to enter
+            pthread_cond_wait(&cond, &lock);
+        }
+    }
 
     
     
