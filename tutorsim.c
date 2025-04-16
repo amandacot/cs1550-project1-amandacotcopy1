@@ -65,7 +65,7 @@ void handle_student(int student_id) {
 
     if (!activated_students[student_id]) {
         pthread_mutex_unlock(&lock);
-        student_leave(student_id); 
+        //student_leave(student_id); 
         return;
     }
 
@@ -104,6 +104,7 @@ void handle_student(int student_id) {
     pthread_mutex_lock(&lock);
     student_leave(student_id);
     current_students--;
+    pthread_cond_broadcast(&cond);  
     pthread_cond_broadcast(&room_cond);
     pthread_mutex_unlock(&lock);
 }
@@ -146,37 +147,48 @@ void handle_tutor(int tutor_id) {
     //       - For each student helped:
     //           - Call tutor_helps_student(tutor_id, student_id)
     //           - Notify student that they have been helped
-    int helped_count = 0;
+ 
+ int helped_count = 0;
 
 while (helped_count < 2) {
-    // Wait until there’s at least one student to help, or the room closes
+    // Wait until a student is helpable
     while (!room_closed) {
-        int available = 0;
+        int student_available = 0;
         for (int sid = 0; sid < MAX_STUDENTS; sid++) {
             if (activated_students[sid] && entered[sid] && !helped[sid]) {
-                available = 1;
+                student_available = 1;
                 break;
             }
         }
-        if (available) break; // Someone is ready to be helped
-        pthread_cond_wait(&cond, &lock); // Wait for someone to arrive
+        if (student_available) break;
+
+        pthread_cond_wait(&cond, &lock); // Wait for students to enter
     }
 
-    // Now search and help one student
-    int found_student = 0;
+    // Help the first available student
+    int found = 0;
     for (int sid = 0; sid < MAX_STUDENTS; sid++) {
         if (activated_students[sid] && entered[sid] && !helped[sid]) {
             helped[sid] = 1;
             tutor_helps_student(tutor_id, sid);
             pthread_cond_signal(&student_ready[sid]);
             helped_count++;
-            found_student = 1;
+            found = 1;
             break;
         }
     }
 
-    // If room is closed and there are no students left, exit
-    if (!found_student && room_closed) break;
+    // Exit only if room is closed and there are no helpable students
+    if (!found && room_closed) {
+        int any_remaining = 0;
+        for (int sid = 0; sid < MAX_STUDENTS; sid++) {
+            if (activated_students[sid] && entered[sid] && !helped[sid]) {
+                any_remaining = 1;
+                break;
+            }
+        }
+        if (!any_remaining) break;
+    }
 }
 
 
