@@ -1,9 +1,7 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 #include "testlib.h"
-#include <unistd.h>
 
 #define MAX_STUDENTS_IN_ROOM 4
 #define MAX_TUTORS_IN_ROOM 2
@@ -62,13 +60,13 @@ void handle_student(int student_id) {
 
     pthread_mutex_lock(&lock);
     while (!activated_students[student_id] && !room_closed) {
-         fprintf(stderr, "INFO: Student %d waiting for reservation or room to close...\n", student_id);
+         //fprintf(stderr, "INFO: Student %d waiting for reservation or room to close...\n", student_id);
         pthread_cond_wait(&cond, &lock);
     }
-    fprintf(stderr, "INFO: Student %d reservation started or room closed\n", student_id);
+    //fprintf(stderr, "INFO: Student %d reservation started or room closed\n", student_id);
 
     if (!activated_students[student_id]) {
-        printf("Student %d not activated, room closed — exiting\n", student_id);
+        //fprintf("Student %d not activated, room closed — exiting\n", student_id);
         student_leave(student_id); 
         pthread_mutex_unlock(&lock);
         return;
@@ -112,7 +110,7 @@ void handle_student(int student_id) {
     pthread_cond_broadcast(&cond);  
     pthread_cond_broadcast(&room_cond);
     pthread_mutex_unlock(&lock);
-    fprintf(stderr, "DEBUG: Student %d thread exiting\n", student_id);
+    //fprintf(stderr, "DEBUG: Student %d thread exiting\n", student_id);
 
 }
 
@@ -166,16 +164,16 @@ int helped_count = 0;
         }
     }
     if (room_closed && !helpable_remaining) {
-        fprintf(stderr, "INFO:Tutor %d sees room is closed and no students left to help\n", tutor_id);
+        //fprintf(stderr, "INFO:Tutor %d sees room is closed and no students left to help\n", tutor_id);
         break;
     }
 
-    fprintf(stderr, "INFO(Tutor %d looking for a student to help (helped %d so far)\n", tutor_id, helped_count);
+    //fprintf(stderr, "INFO(Tutor %d looking for a student to help (helped %d so far)\n", tutor_id, helped_count);
     int found = 0;
     for (int sid = 0; sid < MAX_STUDENTS; sid++) {
         if (activated_students[sid] && entered[sid] && !helped[sid]) {
             helped[sid] = 1;
-            fprintf(stderr, " INFO(Tutor %d found Student %d to help\n", tutor_id, sid);
+            //fprintf(stderr, " INFO(Tutor %d found Student %d to help\n", tutor_id, sid);
             tutor_helps_student(tutor_id, sid);
             pthread_cond_signal(&student_ready[sid]);
             helped_count++;
@@ -186,13 +184,13 @@ int helped_count = 0;
 
 while (!found) {
     // Re-check condition after waking up
-    fprintf(stderr, "INFO: Tutor %d waiting for students...\n", tutor_id);
+    //fprintf(stderr, "INFO: Tutor %d waiting for students...\n", tutor_id);
     pthread_cond_wait(&cond, &lock);
 
     for (int sid = 0; sid < MAX_STUDENTS; sid++) {
         if (activated_students[sid] && entered[sid] && !helped[sid]) {
             helped[sid] = 1;
-            fprintf(stderr, "INFO: Tutor %d found Student %d to help\n", tutor_id, sid);
+            //fprintf(stderr, "INFO: Tutor %d found Student %d to help\n", tutor_id, sid);
             tutor_helps_student(tutor_id, sid);
             pthread_cond_signal(&student_ready[sid]);
             helped_count++;
@@ -210,7 +208,7 @@ while (!found) {
         }
     }
     if (room_closed && !helpable_remaining) {
-        fprintf(stderr, "INFO: Tutor %d breaking early, no students left to help\n", tutor_id);
+        //fprintf(stderr, "INFO: Tutor %d breaking early, no students left to help\n", tutor_id);
         break;
     }
 }
@@ -224,7 +222,7 @@ while (!found) {
     current_tutors--;
     pthread_cond_broadcast(&room_cond);
     pthread_mutex_unlock(&lock);
-    fprintf(stderr, "DEBUG: Tutor %d thread exiting\n", tutor_id);
+    //fprintf(stderr, "DEBUG: Tutor %d thread exiting\n", tutor_id);
 
 }
 
@@ -252,10 +250,4 @@ void close_study_room(void) {
     pthread_cond_broadcast(&cond);      // Wake anyone waiting for activation
     pthread_cond_broadcast(&room_cond); // Wake anyone waiting for space
     pthread_mutex_unlock(&lock);
-
-    // Delay to catch any straggling threads and wake again
-    //usleep(1000);
-    //pthread_mutex_lock(&lock);
-    //pthread_cond_broadcast(&cond);
-    //pthread_mutex_unlock(&lock);
 }
