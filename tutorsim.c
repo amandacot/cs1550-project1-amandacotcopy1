@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -64,6 +65,7 @@ void handle_student(int student_id) {
     }
 
     if (!activated_students[student_id] && room_closed) {
+        printf("Student %d not activated, room closed — exiting\n", student_id);
         student_leave(student_id); 
         pthread_mutex_unlock(&lock);
         return;
