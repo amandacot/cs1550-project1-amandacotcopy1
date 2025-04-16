@@ -64,7 +64,7 @@ void handle_student(int student_id) {
         pthread_cond_wait(&cond, &lock);
     }
 
-    if (!activated_students[student_id] && room_closed) {
+    if (!activated_students[student_id]) {
         printf("Student %d not activated, room closed — exiting\n", student_id);
         student_leave(student_id); 
         pthread_mutex_unlock(&lock);
